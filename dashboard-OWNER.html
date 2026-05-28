@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Herlita — Performance Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f0f2f5;
+  --white: #ffffff;
+  --border: #e2e8f0;
+  --border2: #cbd5e1;
+  --text: #0f172a;
+  --text2: #475569;
+  --text3: #94a3b8;
+  --accent: #2563eb;
+  --green: #16a34a;
+  --green-bg: #dcfce7;
+  --green-text: #15803d;
+  --red: #dc2626;
+  --red-bg: #fee2e2;
+  --red-text: #b91c1c;
+  --orange: #ea580c;
+  --orange-bg: #ffedd5;
+  --purple: #7c3aed;
+  --purple-bg: #ede9fe;
+  --blue-bg: #dbeafe;
+  --blue-text: #1d4ed8;
+  --yellow-bg: #fef9c3;
+  --yellow-text: #854d0e;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
+  --font: 'Inter', sans-serif;
+}
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 13px; }
+
+
+/* ── SPV SECTIONS ── */
+.spv-section { margin-bottom: 32px; }
+.spv-block-header {
+  font-size: 15px; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+}
+.spv-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex-shrink:0; }
+.spv-lisa { background: #ef4444; }
+.spv-desi { background: #3b82f6; }
+.spv-sari { background: #f59e0b; }
+
+/* ── TOPBAR ── */
+.topbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: var(--shadow);
+}
+.topbar-left { display: flex; align-items: center; gap: 12px; }
+.app-icon {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 14px; font-weight: 800;
+}
+.app-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.app-sub { font-size: 11px; color: var(--text3); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.filter-select {
+  height: 34px; padding: 0 10px; font-size: 12px; font-family: var(--font);
+  border: 1px solid var(--border2); border-radius: 8px;
+  background: var(--white); color: var(--text); cursor: pointer; outline: none;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px;
+  min-width: 140px;
+}
+.search-input {
+  height: 34px; padding: 0 12px; font-size: 12px; font-family: var(--font);
+  border: 1px solid var(--border2); border-radius: 8px;
+  background: var(--white); color: var(--text); outline: none; width: 180px;
+}
+.search-input::placeholder { color: var(--text3); }
+.btn-refresh {
+  height: 34px; padding: 0 16px; font-size: 12px; font-weight: 600; font-family: var(--font);
+  background: var(--accent); color: white; border: none; border-radius: 8px;
+  cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s;
+}
+.btn-refresh:hover { background: #1d4ed8; }
+.live-dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; animation: pulse 2s infinite; }
+.live-dot.error { background: #ef4444; animation: none; }
+.live-label { font-size: 11px; color: var(--green); font-weight: 600; }
+.live-label.error { color: var(--red); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+
+/* ── MAIN ── */
+.main { padding: 20px 24px 40px; max-width: 1600px; margin: 0 auto; }
+
+/* ── MULTI-SELECT BULAN ── */
+.month-filter-wrap { position: relative; }
+.month-filter-btn {
+  height: 34px; padding: 0 12px; font-size: 12px; font-family: var(--font);
+  border: 1px solid var(--border2); border-radius: 8px;
+  background: var(--white); color: var(--text); cursor: pointer;
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  min-width: 160px; justify-content: space-between;
+  transition: border-color 0.15s;
+}
+.month-filter-btn:hover, .month-filter-btn.open { border-color: var(--accent); }
+.month-filter-btn.has-selection { background: #eff6ff; color: var(--accent); border-color: var(--accent); }
+.month-chevron { font-size: 9px; color: var(--text3); transition: transform 0.2s; flex-shrink:0; }
+.month-filter-btn.open .month-chevron { transform: rotate(180deg); }
+.month-dropdown {
+  display: none; position: absolute; top: calc(100% + 6px); right: 0;
+  background: var(--white); border: 1px solid var(--border2);
+  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 500; min-width: 200px; overflow: hidden;
+}
+.month-dropdown.open { display: block; }
+.month-dd-header {
+  padding: 10px 14px 8px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.month-dd-title { font-size: 10px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; }
+.month-dd-actions { display: flex; gap: 10px; }
+.month-dd-act { font-size: 11px; color: var(--accent); cursor: pointer; font-weight: 500; }
+.month-dd-act:hover { text-decoration: underline; }
+.month-list { max-height: 220px; overflow-y: auto; padding: 6px 0; }
+.month-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 14px; cursor: pointer; font-size: 12px; color: var(--text);
+  transition: background 0.1s; user-select: none;
+}
+.month-item:hover { background: #f8fafc; }
+.month-item input[type=checkbox] { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; flex-shrink:0; }
+.month-item.selected { color: var(--accent); font-weight: 500; background: #f0f7ff; }
+.month-dd-footer {
+  padding: 8px 14px; border-top: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+}
+.month-sel-count { font-size: 11px; color: var(--text3); }
+.btn-apply {
+  height: 28px; padding: 0 14px; font-size: 11px; font-weight: 600;
+  background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer;
+}
+.btn-apply:hover { background: #1d4ed8; }
+
+/* ── SECTION LABEL ── */
+.section-label {
+  font-size: 12px; font-weight: 600; color: var(--text2);
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.section-label span { font-size: 11px; font-weight: 400; color: var(--text3); }
+
+/* ── OVERVIEW GRID (deprecated - diganti overview-top/bottom) ── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+/* ── OVERVIEW: 3 CIRCLE + STATS ── */
+.overview-top {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.circle-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  display: flex; align-items: center; gap: 16px;
+}
+.circle-card-left { position: relative; flex-shrink: 0; }
+.circle-svg-sm { transform: rotate(-90deg); }
+.c-track { fill: none; stroke: #e8edf4; stroke-width: 9; }
+.c-fill  { fill: none; stroke-width: 9; stroke-linecap: round; transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1); }
+.circle-inner {
+  position: absolute; top:50%; left:50%;
+  transform: translate(-50%,-50%);
+  text-align: center; pointer-events: none;
+}
+.c-pct { font-size: 15px; font-weight: 800; line-height: 1; }
+.c-tag { font-size: 8px; color: var(--text3); margin-top: 1px; letter-spacing: 0.04em; }
+.circle-card-right { flex: 1; min-width: 0; }
+.cc-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin-bottom: 4px; }
+.cc-value { font-size: 18px; font-weight: 800; line-height: 1.1; margin-bottom: 6px; word-break: break-all; }
+.cc-rows { display: flex; flex-direction: column; gap: 3px; }
+.cc-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.cc-row-lbl { font-size: 10px; color: var(--text2); white-space: nowrap; }
+.cc-row-val { font-size: 11px; font-weight: 600; white-space: nowrap; }
+.cc-row-val.neg { color: var(--red); }
+.cc-row-val.pos { color: var(--green); }
+.cc-row-val.dim { color: var(--text2); }
+
+/* STATS ROW bawah */
+.overview-bottom {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 14px 18px;
+}
+.stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); margin-bottom: 6px; }
+.stat-value { font-size: 26px; font-weight: 800; line-height: 1; }
+.stat-value.blue   { color: var(--accent); }
+.stat-value.green  { color: var(--green); }
+.stat-value.orange { color: var(--orange); }
+.stat-value.red    { color: var(--red); }
+.stat-value.purple { color: var(--purple); }
+.stat-value.gray   { color: var(--text2); }
+.stat-sub { font-size: 10px; color: var(--text3); margin-top: 4px; line-height: 1.4; }
+
+/* ── TABEL PER TELE ── */
+.table-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.table-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.table-header-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.table-header-sub { font-size: 11px; color: var(--text3); }
+.tbl-wrap { overflow-x: auto; }
+table.perf-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+table.perf-table thead th {
+  background: #f8fafc;
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--text3);
+  padding: 9px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0;
+}
+table.perf-table thead th.center { text-align: center; }
+table.perf-table thead th.num { text-align: right; }
+table.perf-table .group-header th {
+  background: #f1f5f9;
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: #64748b;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+table.perf-table tbody td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text2);
+  vertical-align: middle;
+}
+table.perf-table tbody tr:last-child td { border-bottom: none; }
+table.perf-table tbody tr:hover td { background: #f8fafc; }
+table.perf-table tbody td.name { font-weight: 700; color: var(--text); font-size: 13px; }
+table.perf-table tbody td.spv { font-size: 11px; color: var(--text3); }
+table.perf-table tbody td.num { text-align: right; font-size: 12px; font-weight: 500; }
+table.perf-table tbody td.center { text-align: center; }
+table.perf-table tbody tr.total-row td {
+  background: #f8fafc;
+  font-weight: 700;
+  color: var(--text);
+  font-size: 12px;
+  border-top: 2px solid var(--border2);
+}
+table.perf-table tbody tr.total-row td.name { font-size: 12px; }
+
+/* achievement bar mini */
+.ach-mini { display: flex; flex-direction: column; gap: 3px; min-width: 120px; }
+.ach-mini-row { display: flex; align-items: center; gap: 6px; font-size: 10px; }
+.ach-mini-label { color: var(--text3); width: 60px; flex-shrink: 0; }
+.ach-mini-bar { flex: 1; height: 5px; background: #e2e8f0; border-radius: 99px; overflow: hidden; min-width: 40px; }
+.ach-mini-fill { height: 100%; border-radius: 99px; }
+.ach-mini-pct { font-weight: 700; font-size: 10px; min-width: 32px; text-align: right; }
+.fill-blue { background: #3b82f6; }
+.fill-purple { background: #8b5cf6; }
+.fill-green { background: #22c55e; }
+
+/* chips */
+.chip {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 20px;
+  min-width: 36px;
+}
+.chip.green { background: var(--green-bg); color: var(--green-text); }
+.chip.red { background: var(--red-bg); color: var(--red-text); }
+.chip.orange { background: var(--orange-bg); color: var(--orange); }
+.chip.purple { background: var(--purple-bg); color: var(--purple); }
+.chip.blue { background: var(--blue-bg); color: var(--blue-text); }
+.chip.yellow { background: var(--yellow-bg); color: var(--yellow-text); }
+.chip.gray { background: #f1f5f9; color: #64748b; }
+
+/* gap pill */
+.gap-val { font-size: 11px; font-weight: 600; }
+.gap-val.neg { color: var(--red); }
+.gap-val.pos { color: var(--green); }
+.gap-val.zero { color: var(--text3); }
+
+/* col borders for visual grouping */
+.col-sep-left { border-left: 2px solid #e2e8f0 !important; }
+
+/* ── FETCH BANNER ── */
+.fetch-banner {
+  display: none; background: #fffbeb;
+  border: 1px solid #fde68a; border-radius: 8px;
+  padding: 10px 16px; margin-bottom: 16px;
+  font-size: 11px; color: #92400e;
+  align-items: center; gap: 8px;
+}
+.fetch-banner.show { display: flex; }
+
+/* ── LOADER ── */
+#loader {
+  position: fixed; inset: 0; background: rgba(255,255,255,0.92);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9999; transition: opacity 0.3s;
+  flex-direction: column; gap: 12px;
+}
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid #e2e8f0; border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-txt { font-size: 12px; color: var(--text3); }
+
+/* footer */
+.footer { font-size: 10px; color: var(--text3); text-align: center; padding: 8px; }
+
+/* responsive */
+@media (max-width: 900px) {
+  .overview-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2,1fr); }
+}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="spinner"></div>
+  <div class="loader-txt" id="loader-txt">Fetching ORDER IN + TARGET PERTELE...</div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="app-icon">NH</div>
+    <div>
+      <div class="app-title">Network Herlita — Performance Dashboard</div>
+      <div class="app-sub" id="topbar-sub">SPV Lisa · Connecting...</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="month-filter-wrap">
+      <button class="month-filter-btn" id="month-btn" onclick="toggleMonthDropdown()">
+        <span id="month-btn-label">📅 Semua Bulan</span>
+        <span class="month-chevron">▼</span>
+      </button>
+      <div class="month-dropdown" id="month-dropdown">
+        <div class="month-dd-header">
+          <span class="month-dd-title">Pilih Bulan</span>
+          <div class="month-dd-actions">
+            <span class="month-dd-act" onclick="selectAllMonths()">Semua</span>
+            <span class="month-dd-act" onclick="clearMonths()">Reset</span>
+          </div>
+        </div>
+        <div class="month-list" id="month-list"></div>
+        <div class="month-dd-footer">
+          <span class="month-sel-count" id="month-sel-count">Semua bulan</span>
+          <button class="btn-apply" onclick="applyMonthFilter()">Terapkan</button>
+        </div>
+      </div>
+    </div>
+    <input class="search-input" id="search-tele" type="text" placeholder="🔍 Search Tele..." oninput="applyFilters()">
+    <div class="live-dot" id="live-dot"></div>
+    <span class="live-label" id="live-label">Loading...</span>
+    <button class="btn-refresh" onclick="refreshAll()">↻ Refresh</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="fetch-banner" id="fetch-banner">
+    ⚠️ Gagal fetch data. Jika sheet <b>Restricted</b>: isi APPS_SCRIPT_URL di kode dengan URL hasil deploy Apps Script. Jika sheet <b>Public</b>: pastikan nama tab sheet sudah benar.
+  </div>
+
+  <!-- SPV SECTIONS (rendered by JS) -->
+  <div id="spv-sections"></div>
+
+    <div class="footer" id="footer-bar"></div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  CONFIG — GitHub Pages + Apps Script
+// ─────────────────────────────────────────────
+
+// GANTI URL INI SETELAH DEPLOY APPS SCRIPT:
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz9PsqZ7cSkSEyfWZwR-LsxNZ4RLji5qHNKla16yfn1amaqGq8rPItLZDLjPPzcasbp/exec';  // https://script.google.com/macros/s/XXXX.../exec
+
+const SHEET_ID          = '';  // kosongkan (pakai Apps Script)
+const SHEET_NAME_ORDER  = 'Data Order In';
+const SHEET_NAME_TARGET = 'Target';
+
+// Mode detection
+const USE_APPS_SCRIPT = APPS_SCRIPT_URL.length > 0;
+const FETCH_URL = APPS_SCRIPT_URL;
+
+if (!USE_APPS_SCRIPT) {
+  console.error('❌ APPS_SCRIPT_URL belum diisi! Deploy Apps Script dulu, copy URL-nya ke config.');
+}
+
+function sheetUrl(name) {
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}`;
+}
+
+// Nama kolom ORDER IN — sesuai sheet "Data Order In"
+const COL_ORDER = {
+  tanggal:   ['TANGGAL'],
+  produk:    ['PRODUCK','PRODUK','PRODUCT'],
+  nama:      ['NAMA KONSUMEN','NAMA','KONSUMEN'],
+  status:    ['UPDATE'],         // status diambil dari kolom UPDATE
+  pencairan: ['PENCAIRAN'],
+  tele:      ['NAMA TELE','TELE','NAMA AMM'],
+  spv:       ['SPV'],
+  source:    ['SOURCE','SUMBER'],
+  merk:      ['MERK/TIPE/TAHUN','MERK/TIPE','MERK'],
+  leasing:   ['LEASING'],
+};
+
+// Nama kolom sheet Target
+const COL_TARGET = {
+  tele:      ['NAMA TELE','TELE'],
+  motorInt:  ['TARGET UNIT INTERNAL','UNIT INTERNAL'],
+  motorExt:  ['TARGET UNIT EXTERNAL','UNIT EXTERNAL'],
+  mobilAmt:  ['TARGET AMOUNT MOBIL','AMOUNT MOBIL','TARGET MOBIL'],
+  spv:       ['SPV'],
+};
+
+// Status normalization map
+// Key = pattern regex, Value = normalized
+const STATUS_MAP = [
+  [/GOLIVE|GO.LIVE|^GL$/i,          'GOLIVE'],
+  [/CANCEL|BATAL/i,                  'CANCEL'],
+  [/REJECT|DITOLAK|TOLAK/i,          'REJECT'],
+  [/APPROV|DISETUJUI|SETUJU/i,       'APPROVED'],
+  [/MISS.LEVEL|MISS LEVEL/i,         'MISS LEVEL'],
+  [/PROSES|PROCESS|ON.PROCESS/i,     'PROSES'],
+  [/SURVEY|SURVEI/i,                 'SURVEY'],
+  [/PENDING|BELUM|^-$|^\s*$/i,       'PENDING'],
+];
+
+// TELE COLORS
+const TELE_COLORS = {
+  MONIC:'#f97316', RINDA:'#22c55e', NAFHA:'#eab308',
+  FIRA:'#8b5cf6', DITA:'#3b82f6', DHITA:'#3b82f6', LISA:'#ec4899', DESI:'#14b8a6',
+};
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let RAW_DATA   = [];
+let TARGETS    = {};
+let isLive     = false;
+let selectedMonths = new Set(); // kosong = semua bulan
+let allMonths  = [];            // list bulan yang tersedia
+let searchTele = '';
+let lastRefresh  = null;
+let refreshTimer = null;
+
+const BULAN_ID = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+// ─────────────────────────────────────────────
+//  CSV PARSER
+// ─────────────────────────────────────────────
+function parseCSVRow(line) {
+  const out = []; let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c==='"') { if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ; }
+    else if (c===','&&!inQ) { out.push(cur); cur=''; }
+    else cur+=c;
+  }
+  out.push(cur); return out;
+}
+
+function findCol(headers, cands) {
+  for (const c of cands) {
+    const cu = c.toUpperCase();
+    let idx = headers.indexOf(cu);
+    if (idx>=0) return idx;
+    idx = headers.findIndex(h=>h.includes(cu)||cu.includes(h));
+    if (idx>=0) return idx;
+  }
+  return -1;
+}
+
+function normStatus(s) {
+  s = (s||'').trim();
+  for (const [re, norm] of STATUS_MAP) if (re.test(s)) return norm;
+  return s.toUpperCase()||'UNKNOWN';
+}
+
+function normProduk(s) {
+  s = (s||'').toUpperCase();
+  return s.includes('MOBIL')||s.includes('CAR')||s.includes('MOBIL') ? 'MOBIL' : 'MOTOR';
+}
+
+function normSource(s) {
+  s = (s||'').toUpperCase();
+  return (s.includes('INT')&&!s.includes('EXT')) ? 'INTERNAL' : 'EXTERNAL';
+}
+
+function parseCurrency(v) {
+  if (!v) return 0;
+  const n = parseFloat(String(v).replace(/[Rp\s\.]/g,'').replace(',','.'));
+  return isNaN(n) ? 0 : n;
+}
+
+function parseTanggal(v) {
+  if (!v) return '';
+  v = v.trim();
+  if (/^\d{1,2}\s+[A-Za-z]+\s+\d{4}$/.test(v)) return v;
+  const parts = v.split(/[\/\-\.]/);
+  if (parts.length >= 3) {
+    let d,m,y;
+    if (parts[0].length===4) { y=+parts[0];m=+parts[1];d=+parts[2]; }
+    else { d=+parts[0];m=+parts[1];y=+parts[2]; }
+    if (y>1900&&m>=1&&m<=12&&d>=1) return `${String(d).padStart(2,'0')} ${BULAN_ID[m]} ${y}`;
+  }
+  return v;
+}
+
+function parseOrderCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = parseCSVRow(lines[0]).map(h=>h.trim().toUpperCase());
+  const ci = {};
+  for (const [k,cands] of Object.entries(COL_ORDER)) ci[k]=findCol(headers,cands);
+
+  // Debug: log headers yang ditemukan
+  console.log('Headers sheet ORDER IN:', headers.slice(0,25));
+  console.log('Column mapping:', Object.fromEntries(Object.entries(ci).map(([k,v])=>[k, v>=0?headers[v]:'NOT FOUND'])));
+
+  const result = [];
+  for (let i=1; i<lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const row = parseCSVRow(lines[i]);
+    const get = k => ci[k]>=0 ? (row[ci[k]]||'').trim() : '';
+    const tele    = get('tele').toUpperCase().trim();
+    const tanggal = parseTanggal(get('tanggal'));
+    // Baris valid kalau ada tele dan tanggal (status boleh kosong = belum diupdate)
+    if (!tele||!tanggal) continue;
+    const rawStatus = get('status');
+    const status    = rawStatus ? normStatus(rawStatus) : 'PENDING';
+    result.push({
+      tanggal, bulan: tanggal.split(' ').slice(1).join(' '),
+      produk:   normProduk(get('produk')),
+      nama:     get('nama')||'-',
+      status,
+      pencairan: parseCurrency(get('pencairan')),
+      tele,
+      spv:      get('spv').toUpperCase().trim()||'-',
+      source:   normSource(get('source')),
+      merk:     get('merk')||'-',
+      leasing:  get('leasing')||'-',
+    });
+  }
+  console.log(`Parsed ${result.length} rows. Sample statuses:`, [...new Set(result.map(r=>r.status))].slice(0,15));
+  return result;
+}
+
+function parseTargetCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return {};
+  const headers = parseCSVRow(lines[0]).map(h=>h.trim().toUpperCase());
+  const ci = {};
+  for (const [k,cands] of Object.entries(COL_TARGET)) ci[k]=findCol(headers,cands);
+  const result = {};
+  for (let i=1; i<lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const row = parseCSVRow(lines[i]);
+    const get = k => ci[k]>=0 ? (row[ci[k]]||'').trim() : '';
+    const tele = get('tele').toUpperCase().trim();
+    if (!tele) continue;
+    result[tele] = {
+      motorInt: parseInt((get('motorInt')||'0').replace(/\D/g,''))||0,
+      motorExt: parseInt((get('motorExt')||'0').replace(/\D/g,''))||0,
+      mobilAmt: parseCurrency(get('mobilAmt'))||0,
+    };
+  }
+  return result;
+}
+
+// ─────────────────────────────────────────────
+//  FETCH — support Apps Script & direct mode
+// ─────────────────────────────────────────────
+async function fetchSheet(name) {
+  const res = await fetch(sheetUrl(name), {cache:'no-cache'});
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  if (!text||text.length<20) throw new Error('Empty response');
+  return text;
+}
+
+async function fetchAll() {
+  try {
+    let orders, targets;
+
+    if (USE_APPS_SCRIPT) {
+      // ── MODE A/B: Apps Script ─────────────────────────────
+      // MODE A: FETCH_URL = URL halaman ini sendiri (relative)
+      // MODE B: FETCH_URL = APPS_SCRIPT_URL yang diisi manual
+      const res = await fetch(FETCH_URL + '?action=all', {cache:'no-cache'});
+      if (!res.ok) throw new Error(`Apps Script HTTP ${res.status}`);
+      const json = await res.json();
+      if (json.error) throw new Error('Apps Script error: ' + json.error);
+      orders  = json.orders  || [];
+      targets = json.targets || {};
+
+    } else {
+      // ── MODE 2: Direct Google Sheets (sheet harus public) ─
+      const [orderText, targetText] = await Promise.all([
+        fetchSheet(SHEET_NAME_ORDER),
+        fetchSheet(SHEET_NAME_TARGET),
+      ]);
+      orders  = parseOrderCSV(orderText);
+      targets = parseTargetCSV(targetText);
+    }
+
+    if (orders.length === 0) throw new Error('0 rows — cek nama sheet & kolom');
+
+    RAW_DATA = orders;
+    if (Object.keys(targets).length > 0) TARGETS = targets;
+
+    isLive = true;
+    const mode = USE_APPS_SCRIPT ? '🔒 Script' : '🌐 Direct';
+    setLive(true, `${mode} — ${orders.length} baris`);
+    document.getElementById('fetch-banner').classList.remove('show');
+    return true;
+
+  } catch(e) {
+    console.warn('fetchAll gagal:', e.message);
+    isLive = false;
+    setLive(false, 'Gagal fetch');
+    document.getElementById('fetch-banner').classList.add('show');
+    return false;
+  }
+}
+
+function setLive(ok, label) {
+  const dot = document.getElementById('live-dot');
+  const lbl = document.getElementById('live-label');
+  dot.className = 'live-dot' + (ok?'':' error');
+  lbl.className = 'live-label' + (ok?'':' error');
+  lbl.textContent = label;
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+async function init() {
+  await fetchAll();
+  if (RAW_DATA.length===0) {
+    document.getElementById('loader-txt').textContent='Tidak ada data. Cek nama tab & permission sheet.';
+    setTimeout(hideLoader, 3000); return;
+  }
+  buildBulanOptions();
+  applyFilters();
+  startTimer();
+  hideLoader();
+}
+
+function hideLoader() {
+  const l = document.getElementById('loader');
+  l.style.opacity='0'; setTimeout(()=>l.style.display='none',300);
+}
+
+function buildBulanOptions() {
+  const order = BULAN_ID.slice(1);
+  allMonths = [...new Set(RAW_DATA.map(r=>r.bulan).filter(Boolean))].sort((a,b)=>{
+    const [ma,ya]=a.split(' '),[mb,yb]=b.split(' ');
+    return ya!==yb?+ya-+yb:order.indexOf(ma)-order.indexOf(mb);
+  });
+
+  // Default: pilih bulan terakhir saja
+  selectedMonths = new Set([allMonths[allMonths.length-1]]);
+  renderMonthList();
+  updateMonthBtn();
+}
+
+function renderMonthList() {
+  const list = document.getElementById('month-list');
+  list.innerHTML = '';
+  allMonths.forEach(m => {
+    const checked = selectedMonths.has(m);
+    const div = document.createElement('div');
+    div.className = 'month-item' + (checked?' selected':'');
+    div.innerHTML = `<input type="checkbox" ${checked?'checked':''} data-month="${m}"> ${m}`;
+    div.onclick = (e) => {
+      if (e.target.tagName==='INPUT') return; // handled by change
+      const cb = div.querySelector('input');
+      cb.checked = !cb.checked;
+      toggleMonth(m, cb.checked, div);
+    };
+    div.querySelector('input').onchange = (e) => toggleMonth(m, e.target.checked, div);
+    list.appendChild(div);
+  });
+  updateSelCount();
+}
+
+function toggleMonth(m, checked, div) {
+  if (checked) selectedMonths.add(m);
+  else selectedMonths.delete(m);
+  div.className = 'month-item' + (checked?' selected':'');
+  updateSelCount();
+}
+
+function updateSelCount() {
+  const cnt = selectedMonths.size;
+  const total = allMonths.length;
+  document.getElementById('month-sel-count').textContent =
+    cnt===0||cnt===total ? 'Semua bulan' : `${cnt} dari ${total} bulan`;
+}
+
+function selectAllMonths() {
+  selectedMonths = new Set(allMonths);
+  renderMonthList();
+}
+function clearMonths() {
+  selectedMonths.clear();
+  renderMonthList();
+}
+
+function toggleMonthDropdown() {
+  const btn = document.getElementById('month-btn');
+  const dd  = document.getElementById('month-dropdown');
+  btn.classList.toggle('open');
+  dd.classList.toggle('open');
+}
+
+function applyMonthFilter() {
+  // tutup dropdown
+  document.getElementById('month-btn').classList.remove('open');
+  document.getElementById('month-dropdown').classList.remove('open');
+  updateMonthBtn();
+  applyFilters();
+}
+
+function updateMonthBtn() {
+  const cnt   = selectedMonths.size;
+  const total = allMonths.length;
+  const lbl   = document.getElementById('month-btn-label');
+  const btn   = document.getElementById('month-btn');
+  if (cnt===0||cnt===total) {
+    lbl.textContent = '📅 Semua Bulan';
+    btn.classList.remove('has-selection');
+  } else if (cnt===1) {
+    lbl.textContent = '📅 '+[...selectedMonths][0];
+    btn.classList.add('has-selection');
+  } else {
+    lbl.textContent = `📅 ${cnt} Bulan`;
+    btn.classList.add('has-selection');
+  }
+}
+
+// Tutup dropdown kalau klik di luar
+document.addEventListener('click', e => {
+  const wrap = document.querySelector('.month-filter-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('month-btn').classList.remove('open');
+    document.getElementById('month-dropdown').classList.remove('open');
+  }
+});
+
+function applyFilters() {
+  searchTele = document.getElementById('search-tele').value.trim().toUpperCase();
+  renderAll();
+}
+
+// ─────────────────────────────────────────────
+//  FILTER
+// ─────────────────────────────────────────────
+function getFiltered() {
+  const useAll = selectedMonths.size===0 || selectedMonths.size===allMonths.length;
+  return RAW_DATA.filter(r=>{
+    if (!useAll && !selectedMonths.has(r.bulan)) return false;
+    return true;
+  });
+}
+
+// ─────────────────────────────────────────────
+//  COMPUTE STATS PER TELE
+// ─────────────────────────────────────────────
+
+function renderAll() {
+  const allData = getFiltered();
+  const goliveOnly = allData.filter(r => r.status === 'GOLIVE');
+  renderSPVSections(goliveOnly, allData);
+  updateTimestamp();
+}
+
+function renderSPVSections(goliveData, allData) {
+  // Build SPV list from targets + data
+  const spvFromTargets = [...new Set(Object.values(TARGETS).map(t => t.spv).filter(Boolean))];
+  const spvFromData = [...new Set(goliveData.map(r => r.spv).filter(Boolean))];
+  const allSpvs = [...new Set([...spvFromTargets, ...spvFromData])].sort();
+
+  const container = document.getElementById('spv-sections');
+  if (!container) return;
+  container.innerHTML = '';
+
+  for (const spv of allSpvs) {
+    const spvGolive = goliveData.filter(r => r.spv === spv);
+    const spvAll = allData.filter(r => r.spv === spv);
+    const spvTargets = {};
+    for (const [tele, t] of Object.entries(TARGETS)) {
+      if ((t.spv||'').toUpperCase() === spv) spvTargets[tele] = t;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'spv-section';
+    wrapper.innerHTML = buildSPVSection(spv, spvGolive, spvAll, spvTargets);
+    container.appendChild(wrapper);
+  }
+}
+
+function buildSPVSection(spv, goliveData, allData, spvTargets) {
+  const allTeles = [...new Set([
+    ...Object.keys(spvTargets),
+    ...goliveData.map(r => r.tele).filter(Boolean)
+  ])].sort();
+
+  // ── Achievement metrics (golive only) ──
+  const achMotorInt = goliveData.filter(r=>r.produk==='MOTOR'&&r.source==='INTERNAL').length;
+  const achMotorExt = goliveData.filter(r=>r.produk==='MOTOR'&&r.source==='EXTERNAL').length;
+  const achMobilAmt = goliveData.filter(r=>r.produk==='MOBIL').reduce((s,r)=>s+r.pencairan,0);
+  const glMotor = goliveData.filter(r=>r.produk==='MOTOR').length;
+  const glMobil = goliveData.filter(r=>r.produk==='MOBIL').length;
+
+  const tgtMotorInt = allTeles.reduce((s,t)=>s+(spvTargets[t]?.motorInt||0),0);
+  const tgtMotorExt = allTeles.reduce((s,t)=>s+(spvTargets[t]?.motorExt||0),0);
+  const tgtMobilAmt = allTeles.reduce((s,t)=>s+(spvTargets[t]?.mobilAmt||0),0);
+
+  const CIRC = 2*Math.PI*39;
+  const pctMI = tgtMotorInt>0?Math.min((achMotorInt/tgtMotorInt)*100,999):0;
+  const pctME = tgtMotorExt>0?Math.min((achMotorExt/tgtMotorExt)*100,999):0;
+  const pctMB = tgtMobilAmt>0?Math.min((achMobilAmt/tgtMobilAmt)*100,999):0;
+  const gapMI = achMotorInt - tgtMotorInt;
+  const gapME = achMotorExt - tgtMotorExt;
+  const gapMB = achMobilAmt - tgtMobilAmt;
+
+  function circHTML(pct, color, fillId, pctId) {
+    const c = pct>=100?'#16a34a':pct>=70?'#ea580c':color;
+    const offset = CIRC - Math.min(pct/100,1)*CIRC;
+    return `<svg class="circle-svg-sm" width="96" height="96" viewBox="0 0 96 96">
+      <circle class="c-track" cx="48" cy="48" r="39"/>
+      <circle class="c-fill" cx="48" cy="48" r="39" stroke="${c}"
+        stroke-dasharray="${CIRC.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}"/>
+    </svg>
+    <div class="circle-inner">
+      <div class="c-pct" style="color:${c}">${pct.toFixed(1)}%</div>
+    </div>`;
+  }
+
+  // ── Stats (ALL data, not just golive) ──
+  const total  = allData.length;
+  const golive = goliveData.length;
+  const cancel = allData.filter(r=>r.status==='CANCEL').length;
+  const reject = allData.filter(r=>r.status==='REJECT').length;
+  const proses = allData.filter(r=>r.status==='PROSES').length;
+  const survey = allData.filter(r=>r.status==='SURVEY').length;
+  const glMotorAll = goliveData.filter(r=>r.produk==='MOTOR').length;
+  const glMobilAll = goliveData.filter(r=>r.produk==='MOBIL').length;
+  const ccMotor = allData.filter(r=>r.status==='CANCEL'&&r.produk==='MOTOR').length;
+  const ccMobil = allData.filter(r=>r.status==='CANCEL'&&r.produk==='MOBIL').length;
+  const rjMotor = allData.filter(r=>r.status==='REJECT'&&r.produk==='MOTOR').length;
+  const rjMobil = allData.filter(r=>r.status==='REJECT'&&r.produk==='MOBIL').length;
+
+  // ── Tele table ──
+  const stats = allTeles.map(t => computeTeleStats(goliveData, t, spvTargets));
+  stats.sort((a,b) => {
+    if (a.total===0&&b.total>0) return 1;
+    if (b.total===0&&a.total>0) return -1;
+    return b.golive-a.golive;
+  });
+
+  const tot = {total:0,golive:0,motorIntGL:0,motorExtGL:0,mobilAmt:0,tgtMotorInt:0,tgtMotorExt:0,tgtMobilAmt:0,srcInt:0,srcExt:0};
+  for (const s of stats) for (const k of Object.keys(tot)) if (typeof s[k]==='number') tot[k]+=s[k];
+  const totPctMI = tot.tgtMotorInt>0?(tot.motorIntGL/tot.tgtMotorInt)*100:null;
+  const totPctME = tot.tgtMotorExt>0?(tot.motorExtGL/tot.tgtMotorExt)*100:null;
+
+  let teleRows = '';
+  for (const s of stats) {
+    const color = TELE_COLORS[s.tele]||'#64748b';
+    const noLead = s.total===0;
+    teleRows += `<tr style="${noLead?'opacity:0.6;background:#fafafa':''}">
+      <td class="name">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle"></span>
+        ${s.tele}
+        ${noLead?'<span style="font-size:9px;font-weight:600;color:#94a3b8;margin-left:6px;background:#f1f5f9;padding:1px 6px;border-radius:4px">NO LEAD</span>':''}
+      </td>
+      <td class="center col-sep-left" style="min-width:130px">${achCell(s.motorIntGL,s.tgtMotorInt,s.pctMotorInt,'unit','#3b82f6')}</td>
+      <td class="center" style="min-width:130px">${achCell(s.motorExtGL,s.tgtMotorExt,s.pctMotorExt,'unit','#8b5cf6')}</td>
+      <td class="center" style="min-width:110px">
+        <span style="font-weight:700;color:#15803d;font-size:12px">${fmtRp(s.mobilAmt)}</span>
+        ${s.tgtMobilAmt>0?`<br><span style="font-size:10px;color:#94a3b8">/ ${fmtRp(s.tgtMobilAmt)}</span>`:''}
+      </td>
+      <td class="center" style="border-right:2px solid #e2e8f0;min-width:90px">
+        ${s.gapMobil!==null?`<span class="gap-val ${s.gapMobil>=0?'pos':'neg'}">${s.gapMobil>=0?'+':''}${fmtRp(s.gapMobil)}</span>`:'<span class="gap-val zero">—</span>'}
+      </td>
+      <td class="num">${s.total}</td>
+      <td class="center"><span class="chip green">${s.golive}</span></td>
+      <td class="num col-sep-left">${s.srcInt}</td>
+      <td class="num">${s.srcExt}</td>
+    </tr>`;
+  }
+
+  teleRows += `<tr class="total-row">
+    <td class="name">TOTAL (${allTeles.length} Tele)</td>
+    <td class="center col-sep-left">${achCell(tot.motorIntGL,tot.tgtMotorInt,totPctMI,'unit','#3b82f6')}</td>
+    <td class="center">${achCell(tot.motorExtGL,tot.tgtMotorExt,totPctME,'unit','#8b5cf6')}</td>
+    <td class="center"><span style="font-weight:700;color:#15803d">${fmtRp(tot.mobilAmt)}</span>${tot.tgtMobilAmt>0?`<br><span style="font-size:10px;color:#94a3b8">/ ${fmtRp(tot.tgtMobilAmt)}</span>`:''}</td>
+    <td class="center" style="border-right:2px solid #e2e8f0">${tot.tgtMobilAmt>0?`<span class="gap-val ${tot.mobilAmt-tot.tgtMobilAmt>=0?'pos':'neg'}">${fmtRp(tot.mobilAmt-tot.tgtMobilAmt)}</span>`:'—'}</td>
+    <td class="num"><b>${tot.total}</b></td>
+    <td class="center"><span class="chip green">${tot.golive}</span></td>
+    <td class="num col-sep-left"><b>${tot.srcInt}</b></td>
+    <td class="num"><b>${tot.srcExt}</b></td>
+  </tr>`;
+
+  const badgeClass = spv==='LISA'?'spv-lisa':spv==='DESI'?'spv-desi':'spv-sari';
+
+  return `
+  <div class="section-label">
+    <span class="spv-dot ${badgeClass}"></span>
+    <b>SPV ${spv}</b>
+    <span id="last-update-label-${spv}"></span>
+  </div>
+
+  <!-- Circle Cards -->
+  <div class="overview-top">
+    <div class="circle-card">
+      <div class="circle-card-left">
+        ${circHTML(pctMI,'#2563eb')}
+      </div>
+      <div class="circle-card-right">
+        <div class="cc-label">🏍 Motor Internal</div>
+        <div class="cc-value" style="color:#2563eb">${achMotorInt} unit</div>
+        <div class="cc-rows">
+          <div class="cc-row"><span class="cc-row-lbl">Target</span><span class="cc-row-val dim">${tgtMotorInt>0?tgtMotorInt+' unit':'— unit'}</span></div>
+          <div class="cc-row"><span class="cc-row-lbl">Gap</span><span class="cc-row-val ${gapMI>=0?'pos':'neg'}">${tgtMotorInt>0?(gapMI>=0?'+':'')+gapMI+' unit':'—'}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="circle-card">
+      <div class="circle-card-left">
+        ${circHTML(pctME,'#7c3aed')}
+      </div>
+      <div class="circle-card-right">
+        <div class="cc-label">🏍 Motor External</div>
+        <div class="cc-value" style="color:#7c3aed">${achMotorExt} unit</div>
+        <div class="cc-rows">
+          <div class="cc-row"><span class="cc-row-lbl">Target</span><span class="cc-row-val dim">${tgtMotorExt>0?tgtMotorExt+' unit':'— unit'}</span></div>
+          <div class="cc-row"><span class="cc-row-lbl">Gap</span><span class="cc-row-val ${gapME>=0?'pos':'neg'}">${tgtMotorExt>0?(gapME>=0?'+':'')+gapME+' unit':'—'}</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="circle-card">
+      <div class="circle-card-left">
+        ${circHTML(pctMB,'#16a34a')}
+      </div>
+      <div class="circle-card-right">
+        <div class="cc-label">🚗 Mobil (NTF)</div>
+        <div class="cc-value" style="color:#16a34a">${fmtRp(achMobilAmt)}</div>
+        <div class="cc-rows">
+          <div class="cc-row"><span class="cc-row-lbl">Target</span><span class="cc-row-val dim">${tgtMobilAmt>0?fmtRp(tgtMobilAmt):'—'}</span></div>
+          <div class="cc-row"><span class="cc-row-lbl">Gap</span><span class="cc-row-val ${gapMB>=0?'pos':'neg'}">${tgtMobilAmt>0?(gapMB>=0?'+':'')+fmtRp(gapMB):'—'}</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="overview-bottom">
+    <div class="stat-card">
+      <div class="stat-label">Total Order In</div>
+      <div class="stat-value blue">${total}</div>
+      <div class="stat-sub">semua status</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Golive / Cair</div>
+      <div class="stat-value green">${golive}</div>
+      <div class="stat-sub">🏍 ${glMotorAll} motor · 🚗 ${glMobilAll} mobil</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Cancel</div>
+      <div class="stat-value orange">${cancel}</div>
+      <div class="stat-sub">🏍 ${ccMotor} · 🚗 ${ccMobil}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Reject</div>
+      <div class="stat-value red">${reject}</div>
+      <div class="stat-sub">🏍 ${rjMotor} · 🚗 ${rjMobil}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Proses + Survey</div>
+      <div class="stat-value purple">${proses+survey}</div>
+      <div class="stat-sub">Proses ${proses} · Survey ${survey}</div>
+    </div>
+  </div>
+
+  <!-- Tele Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <div>
+        <div class="table-header-title">Performance By Tele</div>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="perf-table">
+        <thead>
+          <tr>
+            <th rowspan="2" class="name">TELE NAME</th>
+            <th colspan="2" class="center col-sep-left" style="background:#eff6ff;color:#1d4ed8">ACHIEVEMENT VS TARGET</th>
+            <th colspan="2" class="center" style="background:#f0fdf4;color:#15803d">NTF MOBIL</th>
+            <th rowspan="2" class="num">TOTAL LEAD</th>
+            <th rowspan="2" class="center">GOLIVE</th>
+            <th rowspan="2" class="num col-sep-left">SRC INT</th>
+            <th rowspan="2" class="num">SRC EXT</th>
+          </tr>
+          <tr>
+            <th class="center col-sep-left" style="min-width:130px;font-size:9px">MOTOR INT<br>UNIT / TARGET / %</th>
+            <th class="center" style="min-width:130px;font-size:9px">MOTOR EXT<br>UNIT / TARGET / %</th>
+            <th class="center" style="min-width:110px;font-size:9px">AMOUNT (RP)</th>
+            <th class="center" style="font-size:9px">GAP TARGET</th>
+          </tr>
+        </thead>
+        <tbody>${teleRows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function computeTeleStats(data, tele, targets) {
+  targets = targets || TARGETS;
+  const rows = data.filter(r => r.tele === tele);
+  const t = targets[tele] || {};
+  const glRows = rows.filter(r=>r.status==='GOLIVE');
+  const motorIntGL = glRows.filter(r=>r.produk==='MOTOR'&&r.source==='INTERNAL').length;
+  const motorExtGL = glRows.filter(r=>r.produk==='MOTOR'&&r.source==='EXTERNAL').length;
+  const mobilAmt = glRows.filter(r=>r.produk==='MOBIL').reduce((s,r)=>s+r.pencairan,0);
+  const tgtMotorInt = t.motorInt||0;
+  const tgtMotorExt = t.motorExt||0;
+  const tgtMobilAmt = t.mobilAmt||0;
+  return {
+    tele, spv:(t.spv||'-'),
+    total:rows.length, golive:glRows.length,
+    srcInt:rows.filter(r=>r.source==='INTERNAL').length,
+    srcExt:rows.filter(r=>r.source==='EXTERNAL').length,
+    motorIntGL, motorExtGL, mobilAmt,
+    tgtMotorInt, tgtMotorExt, tgtMobilAmt,
+    pctMotorInt: tgtMotorInt>0?(motorIntGL/tgtMotorInt)*100:null,
+    pctMotorExt: tgtMotorExt>0?(motorExtGL/tgtMotorExt)*100:null,
+    pctMobil: tgtMobilAmt>0?(mobilAmt/tgtMobilAmt)*100:null,
+    gapMobil: tgtMobilAmt>0?(mobilAmt-tgtMobilAmt):null,
+  };
+}
+
+
+function renderOverview(data) {
+  const total  = data.length;
+  const glAll  = data.filter(r=>r.status==='GOLIVE');
+  const golive = glAll.length;
+  const cancel = data.filter(r=>r.status==='CANCEL').length;
+  const reject = data.filter(r=>r.status==='REJECT').length;
+  const proses = data.filter(r=>r.status==='PROSES').length;
+  const survey = data.filter(r=>r.status==='SURVEY').length;
+  const conv   = total>0 ? (golive/total*100).toFixed(1) : '0';
+
+  // Per produk
+  const glMotor = glAll.filter(r=>r.produk==='MOTOR').length;
+  const glMobil = glAll.filter(r=>r.produk==='MOBIL').length;
+  const ccMotor = data.filter(r=>r.status==='CANCEL'&&r.produk==='MOTOR').length;
+  const ccMobil = data.filter(r=>r.status==='CANCEL'&&r.produk==='MOBIL').length;
+  const rjMotor = data.filter(r=>r.status==='REJECT'&&r.produk==='MOTOR').length;
+  const rjMobil = data.filter(r=>r.status==='REJECT'&&r.produk==='MOBIL').length;
+
+  // Achievement per target
+  const achMotorInt = glAll.filter(r=>r.produk==='MOTOR'&&r.source==='INTERNAL').length;
+  const achMotorExt = glAll.filter(r=>r.produk==='MOTOR'&&r.source==='EXTERNAL').length;
+  const achMobilAmt = glAll.filter(r=>r.produk==='MOBIL').reduce((s,r)=>s+r.pencairan,0);
+
+  // Sum semua target dari sheet TARGET PERTELE
+  const allTeles = Object.keys(TARGETS);
+  const tgtMotorInt = allTeles.reduce((s,t)=>s+(TARGETS[t]?.motorInt||0),0);
+  const tgtMotorExt = allTeles.reduce((s,t)=>s+(TARGETS[t]?.motorExt||0),0);
+  const tgtMobilAmt = allTeles.reduce((s,t)=>s+(TARGETS[t]?.mobilAmt||0),0);
+
+  // Pct & gap
+  const pctMI = tgtMotorInt>0 ? Math.min((achMotorInt/tgtMotorInt)*100, 999) : 0;
+  const pctME = tgtMotorExt>0 ? Math.min((achMotorExt/tgtMotorExt)*100, 999) : 0;
+  const pctMB = tgtMobilAmt>0 ? Math.min((achMobilAmt/tgtMobilAmt)*100, 999) : 0;
+  const gapMI = achMotorInt - tgtMotorInt;
+  const gapME = achMotorExt - tgtMotorExt;
+  const gapMB = achMobilAmt - tgtMobilAmt;
+
+  // Helper: update satu circle
+  const CIRC = 2*Math.PI*39; // r=39 → 245.04
+  function setCircle(fillId, pctId, valId, tgtId, gapId, pct, color, achStr, tgtStr, gapStr, gapPos) {
+    const offset = CIRC - Math.min(pct/100,1)*CIRC;
+    const fill   = document.getElementById(fillId);
+    const pctEl  = document.getElementById(pctId);
+    const c      = pct>=100?'#16a34a':pct>=70?'#ea580c':color;
+    fill.style.strokeDashoffset = offset;
+    fill.setAttribute('stroke', c);
+    pctEl.textContent = pct.toFixed(1)+'%';
+    pctEl.style.color = c;
+    document.getElementById(valId).textContent = achStr;
+    document.getElementById(tgtId).textContent = tgtStr;
+    const gapEl = document.getElementById(gapId);
+    gapEl.textContent  = gapStr;
+    gapEl.className    = 'cc-row-val '+(gapPos?'pos':'neg');
+  }
+
+  setCircle(
+    'c-fill-mi','c-pct-mi','cc-val-mi','cc-tgt-mi','cc-gap-mi',
+    pctMI, '#2563eb',
+    `${achMotorInt} unit`,
+    tgtMotorInt>0 ? `${tgtMotorInt} unit` : '— unit',
+    tgtMotorInt>0 ? `${gapMI>=0?'+':''}${gapMI} unit` : '—',
+    gapMI>=0
+  );
+  setCircle(
+    'c-fill-me','c-pct-me','cc-val-me','cc-tgt-me','cc-gap-me',
+    pctME, '#7c3aed',
+    `${achMotorExt} unit`,
+    tgtMotorExt>0 ? `${tgtMotorExt} unit` : '— unit',
+    tgtMotorExt>0 ? `${gapME>=0?'+':''}${gapME} unit` : '—',
+    gapME>=0
+  );
+  setCircle(
+    'c-fill-mb','c-pct-mb','cc-val-mb','cc-tgt-mb','cc-gap-mb',
+    pctMB, '#16a34a',
+    fmtRp(achMobilAmt),
+    tgtMobilAmt>0 ? fmtRp(tgtMobilAmt) : '—',
+    tgtMobilAmt>0 ? (gapMB>=0?'+':'')+fmtRp(gapMB) : '—',
+    gapMB>=0
+  );
+
+  // Stats row
+  el('stat-total').textContent    = total;
+  el('stat-golive').textContent   = golive;
+  el('stat-golive-sub').innerHTML = `🏍 ${glMotor} motor &nbsp;·&nbsp; 🚗 ${glMobil} mobil`;
+  el('stat-cancel').textContent   = cancel;
+  el('stat-cancel-sub').innerHTML = `🏍 ${ccMotor} &nbsp;·&nbsp; 🚗 ${ccMobil}`;
+  el('stat-reject').textContent   = reject;
+  el('stat-reject-sub').innerHTML = `🏍 ${rjMotor} &nbsp;·&nbsp; 🚗 ${rjMobil}`;
+  el('stat-proses').textContent   = proses+survey;
+  el('stat-proses-sub').textContent = `Proses ${proses} · Survey ${survey}`;
+}
+
+function renderTable(data) {
+  // Gabungkan: tele dari data + SEMUA tele dari TARGETS (biar keliatan meski 0 lead)
+  const teleFromData    = new Set(data.map(r=>r.tele).filter(t=>t));
+  const teleFromTargets = new Set(Object.keys(TARGETS));
+  const allTeles        = [...new Set([...teleFromTargets, ...teleFromData])];
+
+  // Filter search
+  const teles = searchTele
+    ? allTeles.filter(t=>t.includes(searchTele))
+    : allTeles;
+
+  // Hitung stats (row dengan 0 lead tetap masuk karena computeTeleStats handle empty)
+  const stats = teles.map(t=>computeTeleStats(data,t));
+
+  // Sort: yang ada lead dulu (golive desc), lalu yang 0 lead (alphabetical)
+  stats.sort((a,b)=>{
+    if (a.total===0 && b.total>0) return 1;
+    if (b.total===0 && a.total>0) return -1;
+    if (a.total===0 && b.total===0) return a.tele.localeCompare(b.tele);
+    return b.golive-a.golive;
+  });
+
+  // Totals
+  const tot = {
+    total:0,golive:0,cancel:0,reject:0,proses:0,survey:0,approved:0,pending:0,
+    srcInt:0,srcExt:0,motorIntGL:0,motorExtGL:0,mobilGL:0,mobilAmt:0,
+    tgtMotorInt:0,tgtMotorExt:0,tgtMobilAmt:0,
+  };
+  for (const s of stats) {
+    for (const k of Object.keys(tot)) if (typeof s[k]==='number') tot[k]+=s[k];
+  }
+  const totPctMI = tot.tgtMotorInt>0? (tot.motorIntGL/tot.tgtMotorInt)*100:null;
+  const totPctME = tot.tgtMotorExt>0? (tot.motorExtGL/tot.tgtMotorExt)*100:null;
+  const totPctMB = tot.tgtMobilAmt>0? (tot.mobilAmt/tot.tgtMobilAmt)*100:null;
+  const totGapMB = tot.tgtMobilAmt>0? tot.mobilAmt-tot.tgtMobilAmt:null;
+
+  const tbody = document.getElementById('perf-tbody');
+  tbody.innerHTML = '';
+
+  for (const s of stats) {
+    const color   = TELE_COLORS[s.tele]||'#64748b';
+    const noLead  = s.total === 0;
+    const tr      = document.createElement('tr');
+    if (noLead) tr.style.cssText = 'opacity:0.6;background:#fafafa';
+    tr.innerHTML = `
+      <td class="name">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle"></span>
+        ${s.tele}
+        ${noLead?'<span style="font-size:9px;font-weight:600;color:#94a3b8;margin-left:6px;background:#f1f5f9;padding:1px 6px;border-radius:4px">NO LEAD</span>':''}
+      </td>
+      <td class="spv">${s.spv}</td>
+
+      <td class="center col-sep-left" style="min-width:130px">
+        ${achCell(s.motorIntGL, s.tgtMotorInt, s.pctMotorInt, 'unit', '#3b82f6')}
+      </td>
+      <td class="center" style="min-width:130px">
+        ${achCell(s.motorExtGL, s.tgtMotorExt, s.pctMotorExt, 'unit', '#8b5cf6')}
+      </td>
+      <td class="center" style="min-width:130px;border-right:2px solid #e2e8f0">
+        ${achCell(s.mobilGL, null, s.pctMobil, 'unit', '#22c55e', s.mobilGL+' unit')}
+      </td>
+
+      <td class="center" style="min-width:110px">
+        <span style="font-weight:700;color:#15803d;font-size:12px">${fmtRp(s.mobilAmt)}</span>
+        ${s.tgtMobilAmt>0?`<br><span style="font-size:10px;color:#94a3b8">/ ${fmtRp(s.tgtMobilAmt)}</span>`:''}
+      </td>
+      <td class="center" style="border-right:2px solid #e2e8f0;min-width:90px">
+        ${s.gapMobil!==null?`<span class="gap-val ${s.gapMobil>=0?'pos':'neg'}">${s.gapMobil>=0?'+':''}${fmtRp(s.gapMobil)}</span>`:'<span class="gap-val zero">—</span>'}
+      </td>
+
+      <td class="num" style="border-right:1px solid #e2e8f0">${s.total}</td>
+      <td class="center"><span class="chip green">${s.golive}</span></td>
+      <td class="center"><span class="chip orange">${s.cancel}</span></td>
+      <td class="center"><span class="chip red">${s.reject}</span></td>
+      <td class="center"><span class="chip blue">${s.proses}</span></td>
+      <td class="center"><span class="chip yellow">${s.survey}</span></td>
+      <td class="center"><span class="chip purple">${s.approved}</span></td>
+      <td class="center"><span class="chip gray">${s.pending}</span></td>
+      <td class="num col-sep-left">${s.srcInt}</td>
+      <td class="num">${s.srcExt}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  // TOTAL ROW
+  const trTot = document.createElement('tr');
+  trTot.className = 'total-row';
+  trTot.innerHTML = `
+    <td class="name">TOTAL (${stats.length} Tele)</td>
+    <td></td>
+    <td class="center col-sep-left">${achCell(tot.motorIntGL, tot.tgtMotorInt, totPctMI, 'unit','#3b82f6')}</td>
+    <td class="center">${achCell(tot.motorExtGL, tot.tgtMotorExt, totPctME, 'unit','#8b5cf6')}</td>
+    <td class="center" style="border-right:2px solid #e2e8f0">${achCell(tot.mobilGL, null, totPctMB, 'unit','#22c55e', tot.mobilGL+' unit')}</td>
+    <td class="center"><span style="font-weight:800;color:#15803d">${fmtRp(tot.mobilAmt)}</span>${tot.tgtMobilAmt>0?`<br><span style="font-size:10px;color:#94a3b8">/ ${fmtRp(tot.tgtMobilAmt)}</span>`:''}</td>
+    <td class="center" style="border-right:2px solid #e2e8f0">
+      ${totGapMB!==null?`<span class="gap-val ${totGapMB>=0?'pos':'neg'}">${totGapMB>=0?'+':''}${fmtRp(totGapMB)}</span>`:'—'}
+    </td>
+    <td class="num" style="border-right:1px solid #e2e8f0"><b>${tot.total}</b></td>
+    <td class="center"><span class="chip green">${tot.golive}</span></td>
+    <td class="center"><span class="chip orange">${tot.cancel}</span></td>
+    <td class="center"><span class="chip red">${tot.reject}</span></td>
+    <td class="center"><span class="chip blue">${tot.proses}</span></td>
+    <td class="center"><span class="chip yellow">${tot.survey}</span></td>
+    <td class="center"><span class="chip purple">${tot.approved}</span></td>
+    <td class="center"><span class="chip gray">${tot.pending}</span></td>
+    <td class="num col-sep-left"><b>${tot.srcInt}</b></td>
+    <td class="num"><b>${tot.srcExt}</b></td>
+  `;
+  tbody.appendChild(trTot);
+}
+
+function achCell(actual, target, pctVal, unit, color, labelOverride) {
+  const label = labelOverride || `${actual}${target!=null?' / '+target:''} ${unit}`;
+  if (pctVal===null) {
+    return `<div style="font-size:11px;color:#94a3b8;text-align:center">${actual} ${unit}<br><span style="font-size:10px;color:#cbd5e1">no target</span></div>`;
+  }
+  const pctCapped = Math.min(pctVal, 100);
+  const textColor = pctVal>=100?'#16a34a':pctVal>=70?'#ea580c':'#dc2626';
+  return `
+    <div style="min-width:120px;padding:0 4px">
+      <div style="font-size:10px;color:#64748b;margin-bottom:3px;text-align:center">${label}</div>
+      <div style="height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin-bottom:3px">
+        <div style="height:100%;width:${pctCapped}%;background:${color};border-radius:99px;transition:width .8s"></div>
+      </div>
+      <div style="font-size:12px;font-weight:700;color:${textColor};text-align:center">${pctVal.toFixed(1)}%</div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────
+//  REFRESH
+// ─────────────────────────────────────────────
+function startTimer() {
+  lastRefresh=new Date(); updateTimestamp();
+  clearInterval(refreshTimer);
+  refreshTimer=setInterval(refreshAll,3600000);
+}
+
+async function refreshAll() {
+  setLive(false,'Refreshing...');
+  await fetchAll();
+  if (RAW_DATA.length>0) { buildBulanOptions(); renderMonthList(); updateMonthBtn(); applyFilters(); }
+  lastRefresh=new Date(); updateTimestamp();
+  clearInterval(refreshTimer);
+  refreshTimer=setInterval(refreshAll,3600000);
+}
+
+function updateTimestamp() {
+  if (!lastRefresh) return;
+  const t=lastRefresh;
+  const s=[t.getHours(),t.getMinutes(),t.getSeconds()].map(n=>String(n).padStart(2,'0')).join(':');
+  const d=t.toLocaleDateString('id-ID',{day:'2-digit',month:'numeric',year:'numeric'});
+  const label=`(Last Update: ${d.replace(/\//g,'/')}, ${s})`;
+  const safeSet = (id, val) => { const e=document.getElementById(id); if(e) e.textContent=val; };
+  safeSet('last-update-label', label);
+  safeSet('perf-update-label', label);
+  safeSet('footer-bar', `${isLive?'🟢 Live':'🟡 Cached'} — Auto-refresh setiap 1 jam — Last update: ${d} ${s}`);
+  const modeStr = USE_APPS_SCRIPT ? '🔒 Apps Script' : '🌐 Direct Sheet';
+  el('topbar-sub').textContent=`SPV Lisa · ${isLive?`${modeStr} — Connected`:'Disconnected'}`;
+}
+
+// ─────────────────────────────────────────────
+//  UTILS
+// ─────────────────────────────────────────────
+const el = id => document.getElementById(id);
+function pct(a,b) { return b ? (a/b*100).toFixed(1) : '0.0'; }
+function fmtRp(n) {
+  const abs=Math.abs(n);
+  let s;
+  if (abs>=1e9) s='Rp '+(n/1e9).toFixed(2)+' M';
+  else if (abs>=1e6) s='Rp '+(n/1e6).toFixed(1)+' jt';
+  else s='Rp '+Math.abs(n).toLocaleString('id-ID');
+  return n<0?'-'+s:s;
+}
+
+window.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
